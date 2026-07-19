@@ -9,12 +9,15 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 
 export const metadata: Metadata = {
   title: 'MY HOBBY - Habit Tracker',
-  description: 'Next-generation, mobile-first claymorphism habit tracker.',
+  description: 'Next-generation, mobile-first habit tracker.',
 };
+
+// Fallback dummy key to prevent build compilation errors in environments without .env.local
+const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZW5vdWdoLW1hcnRpbi01MS5jbGVyay5hY2NvdW50cy5kZXYk';
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={clerkPublishableKey}>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           {children}
