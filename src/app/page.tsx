@@ -38,28 +38,41 @@ export default function Home() {
       let initialHabits: Habit[] = [];
 
       if (isSupabaseConfigured && user) {
-        try {
-          const { data, error } = await supabase
-            .from('habits')
-            .select('*')
-            .eq('user_id', user.id);
-          
-          if (error) throw error;
-          if (data) {
-            initialHabits = data.map((item) => ({
-              id: item.id,
-              name: item.name,
-              category: item.category,
-              color: item.color,
-              completedDates: item.completed_dates || [],
-              createdAt: item.created_at_str || getTodayStr(),
-            }));
-          }
-        } catch (err) {
-          console.error('Error fetching habits from Supabase:', err);
-          // LocalStorage fallback on DB error
+        const { data, error } = await supabase
+          .from('habits')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (error) {
+          // Log the real error message so it's actionable
+          console.warn(
+            '⚠️ Supabase fetch failed — using localStorage fallback.\n' +
+            `Code: ${error.code} | Message: ${error.message}\n` +
+            'If the table is missing, run the SQL in your Supabase SQL Editor:\n' +
+            'create table habits (\n' +
+            '  id text primary key,\n' +
+            '  user_id text not null,\n' +
+            '  name text not null,\n' +
+            '  category text not null,\n' +
+            '  color text not null,\n' +
+            '  completed_dates text[] not null default \'{}\',\n' +
+            '  created_at_str text not null\n' +
+            ');'
+          );
+          // Fall back to localStorage
           const local = localStorage.getItem('minimal_habits');
           if (local) initialHabits = JSON.parse(local);
+        } else if (data) {
+          initialHabits = data.map((item) => ({
+            id: item.id,
+            name: item.name,
+            category: item.category,
+            color: item.color,
+            completedDates: item.completed_dates || [],
+            createdAt: item.created_at_str || getTodayStr(),
+          }));
+          // Keep localStorage in sync
+          localStorage.setItem('minimal_habits', JSON.stringify(initialHabits));
         }
       } else {
         // LocalStorage fallback
@@ -157,6 +170,22 @@ export default function Home() {
           .eq('user_id', user.id);
       } catch (err) {
         console.error('Failed to update habit in Supabase:', err);
+      }
+    }
+  };
+
+  /* ── Delete a habit ───────────────────────────────── */
+  const deleteHabit = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent toggling when clicking delete
+    const updatedHabits = habits.filter((h) => h.id !== id);
+    setHabits(updatedHabits);
+    localStorage.setItem('minimal_habits', JSON.stringify(updatedHabits));
+
+    if (isSupabaseConfigured && user) {
+      try {
+        await supabase.from('habits').delete().eq('id', id).eq('user_id', user.id);
+      } catch (err) {
+        console.error('Failed to delete habit from Supabase:', err);
       }
     }
   };
@@ -277,6 +306,19 @@ export default function Home() {
                     {habit.category}
                   </p>
                 </div>
+
+                {/* Delete button */}
+                <button
+                  onClick={(e) => deleteHabit(habit.id, e)}
+                  aria-label={`Delete ${habit.name}`}
+                  className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-xs font-bold border transition-all duration-200 hover:scale-110 active:scale-90 ${
+                    done
+                      ? 'border-neutral-300 text-neutral-400 hover:border-black hover:bg-black hover:text-white'
+                      : 'border-neutral-800 text-neutral-600 hover:border-white hover:bg-white hover:text-black'
+                  }`}
+                >
+                  ✕
+                </button>
               </ClayCard>
             );
           })}
