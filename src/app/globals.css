@@ -1,26 +1,71 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-minimal-bg:       #000000;
+  --color-minimal-panel:    #0a0a0a;
+  --color-minimal-border:   #262626;
+  --color-minimal-fg:       #ffffff;
+  --color-minimal-muted:    #737373;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* =============================================
+   Minimalist Utilities
+   ============================================= */
+@layer utilities {
+  .minimal-card {
+    background-color: #0a0a0a;
+    border: 1px solid #262626;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  .minimal-card:hover {
+    border-color: #404040;
+  }
+
+  .minimal-card-active {
+    background-color: #ffffff;
+    border-color: #ffffff;
+  }
+
+  .minimal-btn {
+    border: 1px solid #ffffff;
+    background: transparent;
+    color: #ffffff;
+    transition: all 0.2s ease;
+  }
+
+  .minimal-btn:hover {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .minimal-btn-secondary {
+    border: 1px solid #262626;
+    background: transparent;
+    color: #a3a3a3;
+    transition: all 0.2s ease;
+  }
+
+  .minimal-btn-secondary:hover {
+    border-color: #404040;
+    color: #ffffff;
   }
 }
 
+/* =============================================
+   Global Base Styles
+   ============================================= */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #000000;
+  color: #ffffff;
+  font-family: var(--font-sans), sans-serif;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }

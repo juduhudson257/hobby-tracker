@@ -1,0 +1,23 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@theme",
+      "description": "Tailwind CSS v4 theme configuration block. Defines design tokens like colors, fonts, and spacing.",
+      "references": [
+        {
+          "name": "Tailwind CSS v4 Docs",
+          "url": "https://tailwindcss.com/docs/theme"
+        }
+      ]
+    },
+    {
+      "name": "@layer",
+      "description": "Tailwind CSS @layer directive for base, components, and utilities."
+    },
+    {
+      "name": "@apply",
+      "description": "Tailwind CSS @apply directive to inline utility classes."
+    }
+  ]
+}
