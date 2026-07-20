@@ -32,6 +32,16 @@ export default function Home() {
 
   // Load habits from Supabase or LocalStorage
   useEffect(() => {
+    // Fallback: If Clerk takes too long (e.g. >2.5s) to load, break out of loading state using localStorage
+    const fallbackTimeout = setTimeout(() => {
+      if (isInitializing) {
+        console.warn('⚠️ Authentication taking long to load — falling back to local mode.');
+        const local = localStorage.getItem('minimal_habits');
+        if (local) setHabits(JSON.parse(local));
+        setIsInitializing(false);
+      }
+    }, 2500);
+
     const loadData = async () => {
       if (!isLoaded) return;
       
@@ -80,11 +90,13 @@ export default function Home() {
         if (local) initialHabits = JSON.parse(local);
       }
       
+      clearTimeout(fallbackTimeout);
       setHabits(initialHabits);
       setIsInitializing(false);
     };
 
     loadData();
+    return () => clearTimeout(fallbackTimeout);
   }, [user, isLoaded]);
 
   const getGreeting = () => {
