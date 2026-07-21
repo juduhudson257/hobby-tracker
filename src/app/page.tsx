@@ -18,6 +18,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([
     'Fitness',
     'Learning',
@@ -28,44 +29,37 @@ export default function Home() {
   const { user, isLoaded } = useUser();
 
   useEffect(() => {
-    const fallbackTimeout = setTimeout(() => {
-      if (isInitializing) {
-        console.warn('⚠️ Authentication taking long to load — falling back to local mode.');
-        const local = localStorage.getItem('minimal_habits');
-        if (local) setHabits(JSON.parse(local));
-        setIsInitializing(false);
-      }
-    }, 2500);
+    if (!isLoaded) return;
+
+    setHabits([]);
+    setSyncError(null);
+    setIsInitializing(true);
 
     const loadData = async () => {
-      if (!isLoaded) return;
-      
-      let initialHabits: Habit[] = [];
-
       if (user) {
         try {
-          initialHabits = await fetchHabitsFromApi();
-          localStorage.setItem('minimal_habits', JSON.stringify(initialHabits));
+          const fetchedHabits = await fetchHabitsFromApi();
+          setHabits(fetchedHabits);
+          localStorage.setItem('minimal_habits', JSON.stringify(fetchedHabits));
         } catch (err) {
-          console.warn(
-            '⚠️ Failed to load habits from Supabase — using localStorage fallback.\n',
-            err
-          );
-          const local = localStorage.getItem('minimal_habits');
-          if (local) initialHabits = JSON.parse(local);
+          const msg = err instanceof Error ? err.message : 'Unknown error';
+          setSyncError(`Could not load habits from server: ${msg}`);
+          setHabits([]);
         }
       } else {
         const local = localStorage.getItem('minimal_habits');
-        if (local) initialHabits = JSON.parse(local);
+        if (local) {
+          try {
+            setHabits(JSON.parse(local));
+          } catch {
+            setHabits([]);
+          }
+        }
       }
-      
-      clearTimeout(fallbackTimeout);
-      setHabits(initialHabits);
       setIsInitializing(false);
     };
 
     loadData();
-    return () => clearTimeout(fallbackTimeout);
   }, [user, isLoaded]);
 
   const getGreeting = () => {
@@ -211,6 +205,13 @@ export default function Home() {
           )}
         </div>
       </header>
+
+      {syncError && (
+        <div className="bg-red-950/50 border border-red-900 text-red-200 px-4 py-3 rounded-lg text-sm flex justify-between items-center">
+          <span>{syncError}</span>
+          <button onClick={() => setSyncError(null)} className="opacity-70 hover:opacity-100 font-bold ml-4">✕</button>
+        </div>
+      )}
 
       <section className="space-y-6">
         <div className="flex justify-between items-end">
