@@ -10,9 +10,6 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* =============================================
-   Minimalist Utilities
-   ============================================= */
 @layer utilities {
   .minimal-card {
     background-color: #0a0a0a;
@@ -54,9 +51,6 @@
   }
 }
 
-/* =============================================
-   Global Base Styles
-   ============================================= */
 body {
   background-color: #000000;
   color: #ffffff;

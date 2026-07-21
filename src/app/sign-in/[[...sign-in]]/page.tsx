@@ -6,7 +6,6 @@ export default function SignInPage() {
       className="min-h-screen flex items-center justify-center p-6"
       style={{ backgroundColor: '#f4f6fa' }}
     >
-      {/* Decorative blobs */}
       <div
         aria-hidden
         className="pointer-events-none fixed top-[-120px] left-[-120px] w-[420px] h-[420px] rounded-full opacity-30"
@@ -19,7 +18,6 @@ export default function SignInPage() {
       />
 
       <div className="w-full max-w-md relative z-10 flex flex-col items-center gap-8">
-        {/* Branding */}
         <div className="text-center">
           <h1 className="text-5xl font-extrabold tracking-tight" style={{ color: '#e07a5f' }}>
             MY HOBBY
@@ -27,7 +25,6 @@ export default function SignInPage() {
           <p className="text-gray-500 mt-2 font-medium">Sign in to track your daily habits</p>
         </div>
 
-        {/* Clerk Sign-In Card */}
         <div
           className="w-full rounded-3xl p-1"
           style={{

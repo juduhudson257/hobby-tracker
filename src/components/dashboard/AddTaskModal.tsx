@@ -36,7 +36,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
     onAdd({ name, category: finalCategory, color: '#ffffff' });
     
-    // Reset Form
     setName('');
     setCategory(categories[0] || 'Fitness');
     setCustomCategory('');
@@ -47,7 +46,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -57,7 +55,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
             className="fixed inset-0 bg-black/90 z-40"
           />
 
-          {/* Bottom sheet */}
           <motion.div
             key="sheet"
             initial={{ y: '100%' }}
@@ -67,7 +64,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
             className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 pb-10 mx-auto max-w-lg"
           >
             <ClayCard className="border border-neutral-800 bg-neutral-950 rounded-xl">
-              {/* Modal header */}
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-semibold tracking-tight text-white">New Habit</h2>
                 <button
@@ -81,7 +77,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Habit Name */}
                 <div>
                   <label htmlFor="habit-name" className="block text-xs uppercase tracking-widest text-neutral-500 mb-1.5 font-medium">
                     Name
@@ -96,7 +91,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                   />
                 </div>
 
-                {/* Category */}
                 <div>
                   <label htmlFor="habit-category" className="block text-xs uppercase tracking-widest text-neutral-500 mb-1.5 font-medium">
                     Category
@@ -118,7 +112,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                   </select>
                 </div>
 
-                {/* Custom Category Input */}
                 {category === 'NEW_CUSTOM' && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -141,7 +134,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                   </motion.div>
                 )}
 
-                {/* Submit */}
                 <button
                   type="submit"
                   className="w-full mt-2 py-3 rounded-lg bg-white text-black hover:bg-neutral-200 font-semibold tracking-wide text-sm transition-all cursor-pointer"

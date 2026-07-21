@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { ClayCard } from '@/components/ui/ClayCard';
-import type { Habit } from '@/app/page';
+import type { Habit } from '@/types/habit';
 
 interface AnalyticsProps {
   habits: Habit[];
@@ -9,7 +9,6 @@ interface AnalyticsProps {
 
 type Timeframe = 'day' | 'week' | 'month' | 'year';
 
-/* ── Stat Card ─────────────────────────────────────────── */
 function StatCard({
   label,
   value,
@@ -32,7 +31,6 @@ function StatCard({
   );
 }
 
-/* ── Donut Chart ──────────────────────────────────────── */
 function DonutChart({ pct, label }: { pct: number; label: string }) {
   const safeP = Math.max(0, Math.min(100, pct));
   const gradient = `conic-gradient(#ffffff ${safeP}%, #262626 ${safeP}% 100%)`;
@@ -42,7 +40,6 @@ function DonutChart({ pct, label }: { pct: number; label: string }) {
         className="w-full h-full rounded-full"
         style={{ background: gradient, transform: 'rotate(-90deg)' }}
       />
-      {/* Centre hole */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="w-[86px] h-[86px] rounded-full bg-neutral-950 flex flex-col items-center justify-center border border-neutral-900">
           <span className="text-xl font-bold text-white">
@@ -55,7 +52,6 @@ function DonutChart({ pct, label }: { pct: number; label: string }) {
   );
 }
 
-/* ── Category Progress Bar ─────────────────────────────── */
 function CategoryBar({
   category,
   totalCompletions,
@@ -96,7 +92,6 @@ export function Analytics({ habits }: AnalyticsProps) {
     );
   }
 
-  // Get date range limits
   const today = new Date();
   const getDaysLimit = (tf: Timeframe) => {
     switch (tf) {
@@ -109,7 +104,6 @@ export function Analytics({ habits }: AnalyticsProps) {
 
   const daysLimit = getDaysLimit(timeframe);
 
-  // Helper to check if a date is within timeframe
   const isWithinTimeframe = (dateStr: string, limitDays: number) => {
     const date = new Date(dateStr);
     const timeDiff = today.getTime() - date.getTime();
@@ -117,7 +111,6 @@ export function Analytics({ habits }: AnalyticsProps) {
     return daysDiff >= 0 && daysDiff <= limitDays;
   };
 
-  // Helper to calculate habits active days in range
   const getActiveDaysInRange = (habitCreatedAt: string, limitDays: number) => {
     const created = new Date(habitCreatedAt);
     const startRange = new Date(today);
@@ -126,10 +119,9 @@ export function Analytics({ habits }: AnalyticsProps) {
     const activeStart = created > startRange ? created : startRange;
     const diffTime = today.getTime() - activeStart.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
-    return Math.max(1, diffDays); // Minimum 1 day active
+    return Math.max(1, diffDays);
   };
 
-  // Gather stats based on timeframe
   let totalCompletions = 0;
   let expectedCompletions = 0;
   const categoryMap: Record<string, { total: number; done: number }> = {};
@@ -150,7 +142,6 @@ export function Analytics({ habits }: AnalyticsProps) {
 
   const overallRate = expectedCompletions === 0 ? 0 : Math.round((totalCompletions / expectedCompletions) * 100);
 
-  // Stat Card generation
   const renderStatCards = () => {
     if (timeframe === 'day') {
       const todayStr = today.toISOString().split('T')[0];
@@ -170,7 +161,6 @@ export function Analytics({ habits }: AnalyticsProps) {
 
     const dailyAverage = (totalCompletions / daysLimit).toFixed(1);
     
-    // Find best category
     let bestCat = 'None';
     let bestRate = -1;
     Object.entries(categoryMap).forEach(([cat, vals]) => {
@@ -195,7 +185,6 @@ export function Analytics({ habits }: AnalyticsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Minimal Tab Switcher */}
       <div className="flex justify-center md:justify-start">
         <div className="border border-neutral-900 rounded-lg bg-neutral-950 p-1 flex gap-1 inline-flex select-none">
           {(['day', 'week', 'month', 'year'] as Timeframe[]).map((tf) => {
@@ -217,12 +206,9 @@ export function Analytics({ habits }: AnalyticsProps) {
         </div>
       </div>
 
-      {/* Dynamic Stat Cards */}
       {renderStatCards()}
 
-      {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Donut Progress */}
         <ClayCard className="flex flex-col items-center gap-4 border border-neutral-900 bg-neutral-950 rounded-xl">
           <h3 className="font-semibold text-neutral-400 self-start uppercase tracking-wider text-[10px]">
             {timeframe === 'day' ? "Today's completion" : `${timeframe} progress`}
@@ -238,7 +224,6 @@ export function Analytics({ habits }: AnalyticsProps) {
           </div>
         </ClayCard>
 
-        {/* Category Breakdown */}
         <ClayCard className="flex flex-col gap-4 border border-neutral-900 bg-neutral-950 rounded-xl">
           <h3 className="font-semibold text-neutral-400 uppercase tracking-wider text-[10px]">Categories</h3>
           <div className="space-y-4 flex-1 flex flex-col justify-center">

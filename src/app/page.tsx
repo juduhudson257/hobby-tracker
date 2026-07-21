@@ -4,16 +4,13 @@ import { UserButton, SignedIn, SignedOut, SignInButton, useUser } from '@clerk/n
 import { ClayCard } from '@/components/ui/ClayCard';
 import { AddTaskModal } from '@/components/dashboard/AddTaskModal';
 import { Analytics } from '@/components/dashboard/Analytics';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-
-export type Habit = {
-  id: string;
-  name: string;
-  category: string;
-  color: string;
-  completedDates: string[]; // YYYY-MM-DD
-  createdAt: string;        // YYYY-MM-DD
-};
+import {
+  createHabitInApi,
+  deleteHabitInApi,
+  fetchHabitsFromApi,
+  updateHabitInApi,
+} from '@/lib/habits-api';
+import type { Habit } from '@/types/habit';
 
 const getTodayStr = () => new Date().toISOString().split('T')[0];
 
@@ -30,9 +27,7 @@ export default function Home() {
   ]);
   const { user, isLoaded } = useUser();
 
-  // Load habits from Supabase or LocalStorage
   useEffect(() => {
-    // Fallback: If Clerk takes too long (e.g. >2.5s) to load, break out of loading state using localStorage
     const fallbackTimeout = setTimeout(() => {
       if (isInitializing) {
         console.warn('⚠️ Authentication taking long to load — falling back to local mode.');
@@ -47,45 +42,19 @@ export default function Home() {
       
       let initialHabits: Habit[] = [];
 
-      if (isSupabaseConfigured && user) {
-        const { data, error } = await supabase
-          .from('habits')
-          .select('*')
-          .eq('user_id', user.id);
-
-        if (error) {
-          // Log the real error message so it's actionable
+      if (user) {
+        try {
+          initialHabits = await fetchHabitsFromApi();
+          localStorage.setItem('minimal_habits', JSON.stringify(initialHabits));
+        } catch (err) {
           console.warn(
-            '⚠️ Supabase fetch failed — using localStorage fallback.\n' +
-            `Code: ${error.code} | Message: ${error.message}\n` +
-            'If the table is missing, run the SQL in your Supabase SQL Editor:\n' +
-            'create table habits (\n' +
-            '  id text primary key,\n' +
-            '  user_id text not null,\n' +
-            '  name text not null,\n' +
-            '  category text not null,\n' +
-            '  color text not null,\n' +
-            '  completed_dates text[] not null default \'{}\',\n' +
-            '  created_at_str text not null\n' +
-            ');'
+            '⚠️ Failed to load habits from Supabase — using localStorage fallback.\n',
+            err
           );
-          // Fall back to localStorage
           const local = localStorage.getItem('minimal_habits');
           if (local) initialHabits = JSON.parse(local);
-        } else if (data) {
-          initialHabits = data.map((item) => ({
-            id: item.id,
-            name: item.name,
-            category: item.category,
-            color: item.color,
-            completedDates: item.completed_dates || [],
-            createdAt: item.created_at_str || getTodayStr(),
-          }));
-          // Keep localStorage in sync
-          localStorage.setItem('minimal_habits', JSON.stringify(initialHabits));
         }
       } else {
-        // LocalStorage fallback
         const local = localStorage.getItem('minimal_habits');
         if (local) initialHabits = JSON.parse(local);
       }
@@ -114,7 +83,6 @@ export default function Home() {
     }
   };
 
-  /* ── Add a new habit ───────────────────────────── */
   const handleAddHabit = async (data: { name: string; category: string; color: string }) => {
     const newHabit: Habit = {
       id: Math.random().toString(36).substr(2, 9),
@@ -129,31 +97,21 @@ export default function Home() {
     setHabits(updatedHabits);
     localStorage.setItem('minimal_habits', JSON.stringify(updatedHabits));
 
-    if (isSupabaseConfigured && user) {
+    if (user) {
       try {
-        await supabase.from('habits').insert({
-          id: newHabit.id,
-          user_id: user.id,
-          name: newHabit.name,
-          category: newHabit.category,
-          color: newHabit.color,
-          completed_dates: newHabit.completedDates,
-          created_at_str: newHabit.createdAt,
-        });
+        await createHabitInApi(newHabit);
       } catch (err) {
         console.error('Failed to save habit to Supabase:', err);
       }
     }
   };
 
-  /* ── Add a custom category ─────────────────────── */
   const handleAddCategory = (newCat: string) => {
     if (!categories.includes(newCat)) {
       setCategories((prev) => [...prev, newCat]);
     }
   };
 
-  /* ── Toggle today's completion ─────────────────── */
   const toggleHabit = async (id: string) => {
     const today = getTodayStr();
     let updatedHabit: Habit | null = null;
@@ -173,29 +131,24 @@ export default function Home() {
     setHabits(updatedHabits);
     localStorage.setItem('minimal_habits', JSON.stringify(updatedHabits));
 
-    if (isSupabaseConfigured && user && updatedHabit) {
+    if (user && updatedHabit) {
       try {
-        await supabase
-          .from('habits')
-          .update({ completed_dates: (updatedHabit as Habit).completedDates })
-          .eq('id', id)
-          .eq('user_id', user.id);
+        await updateHabitInApi(id, (updatedHabit as Habit).completedDates);
       } catch (err) {
         console.error('Failed to update habit in Supabase:', err);
       }
     }
   };
 
-  /* ── Delete a habit ───────────────────────────────── */
   const deleteHabit = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // prevent toggling when clicking delete
+    e.stopPropagation();
     const updatedHabits = habits.filter((h) => h.id !== id);
     setHabits(updatedHabits);
     localStorage.setItem('minimal_habits', JSON.stringify(updatedHabits));
 
-    if (isSupabaseConfigured && user) {
+    if (user) {
       try {
-        await supabase.from('habits').delete().eq('id', id).eq('user_id', user.id);
+        await deleteHabitInApi(id);
       } catch (err) {
         console.error('Failed to delete habit from Supabase:', err);
       }
@@ -226,7 +179,6 @@ export default function Home() {
         onAddCategory={handleAddCategory}
       />
 
-      {/* ── Header ─────────────────────────────────── */}
       <header className="flex justify-between items-center border-b border-neutral-900 pb-8">
         <div>
           <h1 className="text-3xl font-light tracking-tight font-sans">MY HOBBY</h1>
@@ -260,7 +212,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Today's Habits ─────────────────────────── */}
       <section className="space-y-6">
         <div className="flex justify-between items-end">
           <div>
@@ -273,7 +224,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Empty state */}
         {habits.length === 0 && (
           <ClayCard className="flex flex-col items-center justify-center py-16 gap-3 text-center border border-dashed border-neutral-800 bg-neutral-950/20">
             <span className="text-3xl filter grayscale opacity-60">○</span>
@@ -284,7 +234,6 @@ export default function Home() {
           </ClayCard>
         )}
 
-        {/* Habit cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {habits.map((habit) => {
             const done = habit.completedDates.includes(today);
@@ -297,7 +246,6 @@ export default function Home() {
                   done ? 'bg-white text-black border-white' : 'bg-black text-white border-neutral-800'
                 }`}
               >
-                {/* Minimal B&W Check Indicator */}
                 <div
                   className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-200 text-xs font-bold border ${
                     done ? 'bg-black border-black text-white' : 'border-neutral-700 text-transparent'
@@ -319,7 +267,6 @@ export default function Home() {
                   </p>
                 </div>
 
-                {/* Delete button */}
                 <button
                   onClick={(e) => deleteHabit(habit.id, e)}
                   aria-label={`Delete ${habit.name}`}
@@ -336,7 +283,6 @@ export default function Home() {
           })}
         </div>
 
-        {/* FAB */}
         <div className="mt-8 flex justify-center">
           <button
             onClick={() => setIsModalOpen(true)}
@@ -348,7 +294,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Analytics ──────────────────────────────── */}
       <section className="space-y-4 pt-6 border-t border-neutral-900">
         <div>
           <h2 className="text-xl font-medium tracking-tight">Analytics</h2>
