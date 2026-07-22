@@ -31,7 +31,6 @@ export default function Home() {
   useEffect(() => {
     if (!isLoaded) return;
 
-    setHabits([]);
     setSyncError(null);
     setIsInitializing(true);
 
@@ -39,12 +38,42 @@ export default function Home() {
       if (user) {
         try {
           const fetchedHabits = await fetchHabitsFromApi();
-          setHabits(fetchedHabits);
-          localStorage.setItem('minimal_habits', JSON.stringify(fetchedHabits));
+          if (fetchedHabits.length > 0) {
+            setHabits(fetchedHabits);
+            localStorage.setItem('minimal_habits', JSON.stringify(fetchedHabits));
+          } else {
+            const local = localStorage.getItem('minimal_habits');
+            let localHabits: Habit[] = [];
+            if (local) {
+              try {
+                localHabits = JSON.parse(local);
+              } catch {
+                localHabits = [];
+              }
+            }
+
+            if (localHabits.length > 0) {
+              for (const h of localHabits) {
+                try {
+                  await createHabitInApi(h);
+                } catch (e) {
+                  console.error('Failed to migrate local habit:', e);
+                }
+              }
+              const reFetched = await fetchHabitsFromApi();
+              setHabits(reFetched.length > 0 ? reFetched : localHabits);
+              localStorage.setItem('minimal_habits', JSON.stringify(reFetched.length > 0 ? reFetched : localHabits));
+            } else {
+              setHabits([]);
+            }
+          }
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Unknown error';
-          setSyncError(`Could not load habits from server: ${msg}`);
-          setHabits([]);
+          setSyncError(`Could not sync habits with server: ${msg}`);
+          const local = localStorage.getItem('minimal_habits');
+          if (local) {
+            try { setHabits(JSON.parse(local)); } catch { setHabits([]); }
+          }
         }
       } else {
         const local = localStorage.getItem('minimal_habits');
@@ -54,6 +83,8 @@ export default function Home() {
           } catch {
             setHabits([]);
           }
+        } else {
+          setHabits([]);
         }
       }
       setIsInitializing(false);
